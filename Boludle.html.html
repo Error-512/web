@@ -1,0 +1,298 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Boludle</title>
+
+<style>
+body{
+background:#121213;
+color:white;
+font-family:Arial;
+text-align:center;
+margin:0;
+}
+
+/* GRID */
+.grid{
+display:grid;
+gap:5px;
+width:300px;
+margin:30px auto;
+}
+
+.row{
+display:grid;
+grid-template-columns:repeat(5,1fr);
+gap:5px;
+}
+
+.tile{
+border:2px solid #3a3a3c;
+height:55px;
+display:flex;
+align-items:center;
+justify-content:center;
+font-size:26px;
+font-weight:bold;
+cursor:pointer;
+}
+
+.tile.active{border:2px solid white;}
+
+/* COLORES */
+.correct{background:#538d4e;}
+.present{background:#b59f3b;}
+.absent{background:#3a3a3c;}
+
+/* ANIMACIÓN */
+.flip{animation:flip .6s ease;}
+@keyframes flip{
+0%{transform:rotateX(0)}
+50%{transform:rotateX(90deg)}
+100%{transform:rotateX(0)}
+}
+
+/* TECLADO */
+#keyboard{max-width:500px;margin:auto;}
+.keyrow{display:flex;gap:5px;margin-bottom:6px;}
+
+.key{
+flex:1;
+padding:12px 0;
+background:#818384;
+border-radius:5px;
+user-select:none;
+text-align:center;
+}
+
+.big{flex:1.5;}
+
+.key.correct{background:#538d4e;}
+.key.present{background:#b59f3b;}
+.key.absent{background:#3a3a3c;}
+</style>
+</head>
+
+<body>
+
+<h1>BOLUDLE 🇦🇷</h1>
+
+<div id="grid" class="grid"></div>
+<div id="keyboard"></div>
+
+<script src="diccionario.js"></script>
+
+<script>
+
+// palabra (podés cambiar después a daily)
+const word = "PERRO";
+
+// 🔥 CARGAR ESTADO
+let save = JSON.parse(localStorage.getItem("boludleSave")) || {
+guesses: [],
+keys: {}
+};
+
+let currentRow = save.guesses.length;
+let currentTile = 0;
+
+// GRID
+const grid = document.getElementById("grid");
+
+for(let i=0;i<6;i++){
+let row=document.createElement("div");
+row.className="row";
+
+for(let j=0;j<5;j++){
+let t=document.createElement("div");
+t.className="tile";
+
+t.onclick=()=>{
+if(i!==currentRow) return;
+currentTile=j;
+updateActive();
+};
+
+row.appendChild(t);
+}
+grid.appendChild(row);
+}
+
+// TECLADO
+const keyboard=document.getElementById("keyboard");
+const keyMap={};
+
+const layout=[
+["Q","W","E","R","T","Y","U","I","O","P"],
+["A","S","D","F","G","H","J","K","L","Ñ"],
+["ENTER","Z","X","C","V","B","N","M","⌫"]
+];
+
+layout.forEach(r=>{
+let row=document.createElement("div");
+row.className="keyrow";
+
+r.forEach(k=>{
+let key=document.createElement("div");
+key.textContent=k;
+key.className="key";
+
+if(k==="ENTER"||k==="⌫") key.classList.add("big");
+else keyMap[k]=key;
+
+key.onclick=()=>{
+if(k==="ENTER") submit();
+else if(k==="⌫") del();
+else type(k);
+};
+
+row.appendChild(key);
+});
+
+keyboard.appendChild(row);
+});
+
+// 🔥 RESTAURAR GRID
+save.guesses.forEach((g,rowIndex)=>{
+let row=grid.children[rowIndex];
+
+for(let i=0;i<5;i++){
+let tile=row.children[i];
+tile.textContent=g[i];
+
+if(word[i]===g[i]) tile.classList.add("correct");
+else if(word.includes(g[i])) tile.classList.add("present");
+else tile.classList.add("absent");
+}
+});
+
+// 🔥 RESTAURAR TECLADO
+Object.keys(save.keys).forEach(k=>{
+keyMap[k]?.classList.add(save.keys[k]);
+});
+
+// CURSOR
+function updateActive(){
+document.querySelectorAll(".tile").forEach(t=>t.classList.remove("active"));
+grid.children[currentRow]?.children[currentTile]?.classList.add("active");
+}
+updateActive();
+
+// ESCRIBIR
+function type(l){
+const row = grid.children[currentRow];
+row.children[currentTile].textContent = l;
+
+if(currentTile < 4) currentTile++;
+updateActive();
+}
+
+// BORRAR
+function del(){
+const row = grid.children[currentRow];
+
+if(currentTile > 0 && !row.children[currentTile].textContent){
+currentTile--;
+}
+
+row.children[currentTile].textContent="";
+updateActive();
+}
+
+// TECLADO FÍSICO
+document.addEventListener("keydown",e=>{
+if(e.key==="Enter") submit();
+else if(e.key==="Backspace") del();
+else if(/^[a-zñ]$/i.test(e.key)) type(e.key.toUpperCase());
+});
+
+// SUBMIT
+function submit(){
+
+let row = grid.children[currentRow];
+let guess = "";
+
+for(let i=0;i<5;i++){
+guess += row.children[i].textContent || "";
+}
+
+if(guess.length !== 5){
+alert("Faltan letras");
+return;
+}
+
+if(!dictionary.includes(guess)){
+alert("No existe");
+return;
+}
+
+// guardar intento
+save.guesses.push(guess);
+
+// animación + colores
+for(let i=0;i<5;i++){
+let tile=row.children[i];
+let l=guess[i];
+
+setTimeout(()=>{
+tile.classList.add("flip");
+
+setTimeout(()=>{
+
+let state;
+
+if(word[i]===l){
+tile.classList.add("correct");
+state="correct";
+}
+else if(word.includes(l)){
+tile.classList.add("present");
+state="present";
+}
+else{
+tile.classList.add("absent");
+state="absent";
+}
+
+// 🔥 teclado con prioridad
+const prev = save.keys[l];
+
+if(
+state==="correct" ||
+(state==="present" && prev!=="correct") ||
+(state==="absent" && !prev)
+){
+save.keys[l]=state;
+
+keyMap[l]?.classList.remove("correct","present","absent");
+keyMap[l]?.classList.add(state);
+}
+
+},300);
+
+},i*300);
+}
+
+// 🔥 GUARDAR
+localStorage.setItem("boludleSave", JSON.stringify(save));
+
+// siguiente fila
+setTimeout(()=>{
+if(guess===word){
+alert("GANASTE 😎");
+return;
+}
+
+currentRow++;
+currentTile=0;
+updateActive();
+
+},1800);
+}
+
+</script>
+
+</body>
+</html>
