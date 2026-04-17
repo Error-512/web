@@ -1,0 +1,353 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>¿Qué Preferís?</title>
+
+<style>
+*{box-sizing:border-box}
+
+body{
+margin:0;
+font-family:-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto;
+background:#0b0b0b;
+color:#eaeaea;
+display:flex;
+justify-content:center;
+align-items:center;
+height:100vh;
+overflow:hidden;
+}
+
+.container{
+width:100%;
+max-width:500px;
+padding:20px;
+}
+
+h1{
+text-align:center;
+font-size:20px;
+opacity:0.6;
+margin-bottom:15px;
+}
+
+.card{
+background:#151515;
+padding:20px;
+border-radius:20px;
+box-shadow:0 10px 40px rgba(0,0,0,0.6);
+overflow:hidden;
+}
+
+.option{
+background:#222;
+padding:16px;
+margin:12px 0;
+border-radius:14px;
+cursor:pointer;
+transition:all 0.35s ease;
+}
+
+.option:hover{
+background:#2c2c2c;
+transform:scale(1.02);
+}
+
+.option:active{
+transform:scale(0.96);
+}
+
+.option.selected{
+background:#2f3a4a;
+transform:scale(1.03);
+}
+
+.option.fade{
+opacity:0.4;
+transform:scale(0.98);
+}
+
+.bar{
+height:10px;
+border-radius:10px;
+margin-top:10px;
+background:#2a2a2a;
+overflow:hidden;
+opacity:0;
+transform:translateY(5px);
+transition:all 0.5s ease;
+}
+
+.bar.show{
+opacity:1;
+transform:translateY(0);
+}
+
+.fill{
+height:100%;
+background:#6aa9ff;
+width:0%;
+transition:width 0.8s cubic-bezier(.22,1,.36,1);
+}
+
+.stats{
+font-size:13px;
+opacity:0;
+margin-top:5px;
+transform:translateY(5px);
+transition:all 0.5s ease;
+}
+
+.stats.show{
+opacity:0.7;
+transform:translateY(0);
+}
+
+.progress{
+text-align:center;
+margin-top:10px;
+opacity:0.4;
+font-size:13px;
+}
+
+.fadeOut{
+animation:fadeOut 0.4s forwards;
+}
+
+.fadeIn{
+animation:fadeIn 0.5s ease;
+}
+
+@keyframes fadeOut{
+to{opacity:0; transform:translateY(-10px);}
+}
+
+@keyframes fadeIn{
+from{opacity:0; transform:translateY(15px);}
+to{opacity:1; transform:translateY(0);}
+}
+
+</style>
+</head>
+<body>
+
+<div class="container">
+<h1>¿Qué preferís?</h1>
+<div id="game" class="card fadeIn"></div>
+</div>
+
+<script>
+
+const questionsBase = [
+["Ser millonario pero vivir encerrado","Ser clase media pero libre"],
+["No comer nunca más asado","No comer nunca más pizza"],
+["Que te odie todo el país","Que te odie tu familia"],
+["Ser famoso pero sin amigos","Ser desconocido con amigos reales"],
+["Vivir sin mate","Vivir sin café"],
+["Ganar el mundial sin verlo","Perder viéndolo"],
+["Tener plata infinita sin comida","Comer todo pero ser pobre"],
+["Que te cancelen en redes","Que te humillen en la tele"],
+["No usar internet nunca más","No salir nunca de tu casa"],
+["Verano eterno","Invierno eterno"],
+
+["Mate siempre frío","Mate siempre lavado"],
+["Ser amigo de Maradona pero vivir en caos","No conocerlo pero vida tranquila"],
+["No poder escuchar música","No poder ver series o películas"],
+["Tener el mejor celular sin wifi","Celular viejo con internet perfecto"],
+["Que se corte la luz siempre","Que se corte el agua siempre"],
+["Vivir en una villa feliz","Vivir en un country solo"],
+["Ser el mejor en algo inútil","Ser promedio en todo"],
+["Dormir mal siempre","Comer mal siempre"],
+["Que te stalkeen siempre","Que nadie te registre nunca"],
+["Perder todos tus recuerdos","No poder crear nuevos"],
+
+["Comer solo milanesas","Comer solo empanadas"],
+["No reír nunca más","No llorar nunca más"],
+["Ser viral por algo vergonzoso","No ser conocido nunca"],
+["Decir siempre la verdad","Mentir pero que te descubran"],
+["Leer la mente de todos","Que lean tu mente"],
+["Volver al pasado","Ver el futuro"],
+["Ser pobre feliz","Ser rico infeliz"],
+["No usar celular","No poder hablar"],
+["Internet lento siempre","Llegar tarde siempre"],
+["Sin videojuegos","Sin música"],
+
+["Que tu equipo descienda","No ver fútbol nunca más"],
+["Ser influencer famoso","Tener trabajo estable"],
+["Comida siempre fría","Comida siempre recalentada"],
+["Jefe insoportable","No tener trabajo"],
+["No viajar nunca","No poder estar tranquilo nunca"],
+["Perder el gusto","Perder el olfato"],
+["No mentir nunca","No decir la verdad nunca"],
+["Que vuelva tu ex","No enamorarte nunca más"],
+["Que todos sepan tus secretos","No saber los de nadie"],
+["Ser inteligente antisocial","Ser sociable poco inteligente"],
+
+["Que te roben el celular","Que te roben la billetera"],
+["Sin redes sociales","Sin streaming"],
+["Comer solo dulce","Comer solo salado"],
+["No poder escuchar","No poder hablar"],
+["Sin aire acondicionado","Sin calefacción"],
+["Siempre fila larga","Siempre tráfico"],
+["No salir de noche","No salir de día"],
+["Que siempre llueva","Calor extremo siempre"],
+["Ser famoso en Argentina","Ser famoso afuera pero odiado acá"],
+["Que te hackeen","Perder todo tu dinero"],
+
+["Vivir en Buenos Aires siempre","Mudarte al interior sin volver"],
+["No comer carne","No comer harinas"],
+["Que te rechacen siempre","Que nunca te elijan"],
+["Ser invisible","Poder volar"],
+["No usar transporte","No poder caminar mucho"],
+["Tener suerte","Ser muy capaz"],
+["Vida comedia","Vida drama"],
+["No usar emojis","No poder escribir texto"],
+["Que todos te mientan","Verdad brutal siempre"],
+["No poder ahorrar","No poder gastar"],
+
+["Ser lindo pero pobre","Ser feo pero rico"],
+["Que te interrumpan siempre","No poder hablar"],
+["No jugar nunca más","No estudiar nunca más"],
+["Todo mal una semana","Algo terrible una vez"],
+["Vivir 100 años aburrido","Vivir 40 increíbles"],
+["Olvidar todo cada día","No recordar tu infancia"],
+["Que te ignoren","Que te molesten siempre"],
+["No comer postre","No comer plato principal"],
+["Tener todo pero solo","Tener poco pero acompañado"],
+["No poder elegir nada","Tener demasiadas opciones"],
+
+["Famoso sin privacidad","Anónimo total"],
+["Que te graben siempre","Que no haya fotos tuyas"],
+["No equivocarte nunca","No acertar nunca"],
+["Todo fácil","Todo difícil pero valioso"],
+["No usar dinero","No poder intercambiar cosas"],
+["Nadie te cree","Todos creen todo"],
+["Vivir en el pasado","Vivir en el futuro"],
+["No usar zapatillas","No usar pantalones"],
+["Hambre siempre","Sueño siempre"],
+["Perder la voz","Perder la vista"],
+
+["Decir la verdad y ser odiado","Mentir y ser querido"],
+["Perder siempre","Ganar pero solo"],
+["No usar Google","No usar YouTube"],
+["Vida pública","Vida secreta aburrida"],
+["No comer tu comida favorita nunca","Comerla todos los días"],
+["Tiempo lento","Tiempo rápido"],
+["Ser el mejor sin reconocimiento","Ser mediocre famoso"],
+["No elegir qué ver","No elegir qué escuchar"],
+["Todo predecible","Todo impredecible"],
+["No salir del país","No poder volver nunca"],
+
+["Sin internet siempre","Sin luz siempre"],
+["Sin almohada","Sin sábana"],
+["Que te olviden","Que no te superen nunca"],
+["Silencio total","Ruido constante"],
+["No enfermarte pero sentir dolor","Enfermarte sin dolor"],
+["No poder correr","No poder saltar"],
+["Que todo te dé risa","Que nada te cause gracia"],
+["Ser siempre segundo","No competir nunca"],
+["No aprender nada nuevo","Olvidar lo que sabés"],
+["Saber cómo vas a morir","Saber cuándo vas a morir"]
+];
+
+// mezclar preguntas
+function shuffle(arr){
+return arr.sort(()=>Math.random()-0.5);
+}
+
+let questions = shuffle([...questionsBase]);
+
+let votes = JSON.parse(localStorage.getItem("qp_votes") || "{}");
+
+let index = 0;
+
+render();
+
+function render(){
+const game = document.getElementById("game");
+
+// loop infinito
+if(index >= questions.length){
+questions = shuffle([...questionsBase]);
+index = 0;
+}
+
+const q = questions[index];
+
+game.classList.remove("fadeIn");
+void game.offsetWidth;
+game.classList.add("fadeIn");
+
+game.innerHTML = `
+<div class="option" onclick="vote(0, this)">
+${q[0]}
+<div class="bar"><div id="bar0" class="fill"></div></div>
+<div id="stats0" class="stats"></div>
+</div>
+
+<div class="option" onclick="vote(1, this)">
+${q[1]}
+<div class="bar"><div id="bar1" class="fill"></div></div>
+<div id="stats1" class="stats"></div>
+</div>
+
+<div class="progress">∞</div>
+`;
+}
+
+function getKey(q){
+return q[0] + "|" + q[1];
+}
+
+function vote(choice, el){
+const options = document.querySelectorAll(".option");
+options.forEach(o=>o.classList.add("fade"));
+el.classList.remove("fade");
+el.classList.add("selected");
+
+const key = getKey(questions[index]);
+
+if(!votes[key]) votes[key] = [0,0];
+votes[key][choice]++;
+
+localStorage.setItem("qp_votes", JSON.stringify(votes));
+
+setTimeout(showResults, 350);
+}
+
+function showResults(){
+const key = getKey(questions[index]);
+const v = votes[key];
+
+const total = v[0] + v[1];
+const p0 = total ? Math.round(v[0]/total*100) : 0;
+const p1 = total ? Math.round(v[1]/total*100) : 0;
+
+document.getElementById("bar0").style.width = p0+"%";
+document.getElementById("bar1").style.width = p1+"%";
+
+document.getElementById("stats0").innerText = p0+"% ("+v[0]+")";
+document.getElementById("stats1").innerText = p1+"% ("+v[1]+")";
+
+document.querySelectorAll(".bar").forEach(b=>b.classList.add("show"));
+document.querySelectorAll(".stats").forEach(s=>s.classList.add("show"));
+
+setTimeout(nextQuestion, 1400);
+}
+
+function nextQuestion(){
+const game = document.getElementById("game");
+game.classList.add("fadeOut");
+
+setTimeout(()=>{
+index++;
+render();
+}, 350);
+}
+
+</script>
+
+</body>
+</html>
